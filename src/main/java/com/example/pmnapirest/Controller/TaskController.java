@@ -1,7 +1,9 @@
 package com.example.pmnapirest.Controller;
 
 import com.example.pmnapirest.Entity.Task;
+import com.example.pmnapirest.Service.TaskService;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
@@ -16,21 +18,20 @@ import java.util.*;
 @RequestMapping("/tasks")
 @Validated
 public class TaskController {
+
+    @Autowired
+    private TaskService taskService;
     private static final List<Task> tasks = new ArrayList<>();
     private Long nextId = 1L;
 
     @GetMapping
     public List<Task> getAllTasks() {
-        if (tasks.isEmpty()) {
-            return null;
-        }
-        return tasks;
+        return taskService.fetchAllTasks();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Task> getTaskById(@PathVariable Long id) {
-        Optional<Task> task = findTaskById(id);
-        return task.map(ResponseEntity::ok).orElseGet(() -> ResponseEntity.notFound().build());
+    public Task getTaskById(@PathVariable Long id) {
+        return taskService.getTaskById(id);
     }
 
     @PostMapping
@@ -38,44 +39,24 @@ public class TaskController {
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body("Invalid input");
         }
-        task.setId(nextId++);
-        tasks.add(task);
-        return ResponseEntity.status(HttpStatus.CREATED).body("Success");
+        taskService.savaTask(task);
+        return ResponseEntity.status(HttpStatus.CREATED).body("Task added Successefully");
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Task> updateTask(@PathVariable Long id,@Valid @RequestBody Task updatedTask,BindingResult result) {
+    public Task updateTask(@PathVariable Long id,@Valid @RequestBody Task updatedTask,BindingResult result) {
         if (result.hasErrors()) {
-            return ResponseEntity.badRequest().body(null);
+            return null;
         }
-        Optional<Task> existingTask = findTaskById(id);
-        if (existingTask.isPresent()) {
-            Task task = existingTask.get();
-            task.setTitle(updatedTask.getTitle());
-            task.setDescription(updatedTask.getDescription());
-            task.setCompleted(updatedTask.isCompleted());
-            return ResponseEntity.ok(task);
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+        return taskService.updateTaskById(id, updatedTask);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTask(@PathVariable Long id) {
-        Optional<Task> task = findTaskById(id);
-        if (task.isPresent()) {
-            tasks.remove(task.get());
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
+    public String deleteTask(@PathVariable Long id) {
+
+        return taskService.deleteTaskById(id);
     }
 
-    private Optional<Task> findTaskById(Long id) {
-        return tasks.stream()
-                .filter(task -> task.getId().equals(id))
-                .findFirst();
-    }
 
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
