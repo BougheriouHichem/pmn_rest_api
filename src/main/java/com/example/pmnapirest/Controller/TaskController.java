@@ -34,7 +34,7 @@ public class TaskController {
         return taskService.getTaskById(id);
     }
 
-    @PostMapping
+    @PostMapping("/add")
     public ResponseEntity<String> addTask(@Valid @RequestBody Task task, BindingResult result) {
         if (result.hasErrors()) {
             return ResponseEntity.badRequest().body("Invalid input");
@@ -43,7 +43,7 @@ public class TaskController {
         return ResponseEntity.status(HttpStatus.CREATED).body("Task added Successefully");
     }
 
-    @PutMapping("/{id}")
+    @PutMapping("/update/{id}")
     public Task updateTask(@PathVariable Long id,@Valid @RequestBody Task updatedTask,BindingResult result) {
         if (result.hasErrors()) {
             return null;
